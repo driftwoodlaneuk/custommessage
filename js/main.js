@@ -1,15 +1,22 @@
 const params = new URLSearchParams(window.location.search);
 
-const COLORS = {
-  "0": "",
-  "1": "#ffffff",
-  "2": "#000000",
-  "3": "#ff0000",
-  "4": "#0000ff",
-  "5": "#00ff00",
-  "6": "#ffff00",
-  "7": "#ff69b4"
-};
+/*
+  Compact scene format:
+  ?bg=<colour>&s=msg,mt,mc,img,it,ic,dly,dur~msg,mt,mc,img,it,ic,dly,dur
+
+  Fields:
+  msg = message text (URL-encode this in your generator)
+  mt  = message transition code
+  mc  = message colour code or hex
+  img = SVG filename without .svg
+  it  = image transition code
+  ic  = image colour code or hex
+  dly = delay code or raw milliseconds
+  dur = duration code or raw milliseconds
+
+  Example:
+  ?bg=k&s=I,1,r,heart,5,p,2,4~love,1,B,circle,5,y,1,5
+*/
 
 const TIMES = {
   "0": 0,
@@ -22,19 +29,55 @@ const TIMES = {
   "7": 5000
 };
 
+const COLOR_CODES = {
+  d: "",          // default / no override
+
+  w: "#ffffff",
+  W: "#f8f8f8",
+
+  k: "#000000",
+  K: "#222222",
+
+  r: "#ff4d4d",
+  R: "#ff0000",
+
+  g: "#4dff88",
+  G: "#00cc44",
+
+  b: "#4d94ff",
+  B: "#0000ff",
+
+  y: "#ffd24d",
+  Y: "#ffff00",
+
+  p: "#ff69b4",
+  P: "#ff1493",
+
+  o: "#ffa500",
+  O: "#ff7a00",
+
+  c: "#00d9ff",
+  C: "#00ffff",
+
+  m: "#c77dff",
+  M: "#a020f0"
+};
+
 const DEFAULT_SCENE = {
   msg: "I love you lots",
   mt: "1",
-  mc: "0",
+  mc: "w",
   img: "heart",
   it: "1",
-  ic: "0",
+  ic: "p",
   dly: "6",
   dur: "5"
 };
 
+const DEFAULT_BACKGROUND = "#111111";
 const FADE_OUT_MS = 500;
 
+const body = document.body;
 const messageScene = document.getElementById("message-scene");
 const imageScene = document.getElementById("image-scene");
 const pageMessage = document.getElementById("page-message");
@@ -62,12 +105,44 @@ function getTimeValue(code, fallback = 0) {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-function getColorValue(code) {
-  if (Object.prototype.hasOwnProperty.call(COLORS, code)) {
-    return COLORS[code];
+function normalizeHex(value) {
+  if (!value) return "";
+
+  const trimmed = value.trim();
+
+  // Already decoded hex, eg #ff0000 or #f00
+  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)) {
+    return trimmed;
   }
 
   return "";
+}
+
+function getColorValue(code) {
+  if (!code) return "";
+
+  const trimmed = code.trim();
+
+  if (Object.prototype.hasOwnProperty.call(COLOR_CODES, trimmed)) {
+    return COLOR_CODES[trimmed];
+  }
+
+  const hex = normalizeHex(trimmed);
+  if (hex) {
+    return hex;
+  }
+
+  return "";
+}
+
+function getBackgroundValue() {
+  const raw = params.get("bg");
+  if (!raw) return DEFAULT_BACKGROUND;
+
+  const decoded = decodeText(raw);
+  const color = getColorValue(decoded);
+
+  return color || DEFAULT_BACKGROUND;
 }
 
 function getScenes() {
@@ -86,11 +161,11 @@ function getScenes() {
 
       return {
         msg: decodeText((p[0] || "").trim()),
-        mt: (p[1] || "0").trim(),
-        mc: (p[2] || "0").trim(),
+        mt: (p[1] || "1").trim(),
+        mc: decodeText((p[2] || "d").trim()),
         img: sanitizeImageName((p[3] || "").trim()),
-        it: (p[4] || "0").trim(),
-        ic: (p[5] || "0").trim(),
+        it: (p[4] || "1").trim(),
+        ic: decodeText((p[5] || "d").trim()),
         dly: (p[6] || "0").trim(),
         dur: (p[7] || "5").trim()
       };
@@ -132,6 +207,10 @@ function imgClass(type) {
   }
 }
 
+function applyBackground() {
+  body.style.background = getBackgroundValue();
+}
+
 function reset() {
   messageScene.style.display = "none";
   imageScene.style.display = "none";
@@ -156,6 +235,8 @@ function wait(ms) {
 }
 
 async function play() {
+  applyBackground();
+
   const scenes = getScenes();
 
   for (let i = 0; i < scenes.length; i++) {
@@ -195,6 +276,7 @@ async function play() {
 
       const imgColor = getColorValue(scene.ic);
       if (imgColor) {
+        // Works as a simple recolour helper for many SVG/icon cases.
         heroImage.style.filter = `drop-shadow(0 0 0 ${imgColor})`;
       }
     }
