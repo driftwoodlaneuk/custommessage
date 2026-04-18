@@ -30,7 +30,7 @@ function getScenes() {
   const packed = params.get("s");
   if (!packed) {
     return [{
-      msg: "I love you lots, but",
+      msg: "I love you lots",
       mt: "1",
       mc: "0",
       img: "heart",
