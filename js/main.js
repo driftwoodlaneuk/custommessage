@@ -1,177 +1,108 @@
-const DEFAULT_MESSAGE = 'I love you lots, but';
-const DEFAULT_IMAGE = 'middle-finger-svgrepo-com';
-const DEFAULT_MESSAGE_TRANSITION = '2';
-const DEFAULT_IMAGE_TRANSITION = '1';
-const INITIAL_DELAY_MS = 3000;
-const SCENE_DURATION_MS = 2200;
+const params = new URLSearchParams(window.location.search);
 
-const ALLOWED_IMAGES = {
-  'middle-finger-svgrepo-com': 'img/middle-finger-svgrepo-com.svg',
-  circle: 'img/circle.svg',
-  square: 'img/square.svg',
-  triangle: 'img/triangle.svg',
-  heart: 'img/heart.svg'
+const COLORS = {
+  "0": "",
+  "1": "#ffffff",
+  "2": "#000000",
+  "3": "#ff0000",
+  "4": "#0000ff",
+  "5": "#00ff00",
+  "6": "#ffff00",
+  "7": "#ff69b4"
 };
 
-const MESSAGE_TRANSITIONS = new Set(['1', '2', '3', '4']);
-const IMAGE_TRANSITIONS = new Set(['1', '2', '3', '4', '5']);
+const TIMES = {
+  "0": 0,
+  "1": 250,
+  "2": 500,
+  "3": 1000,
+  "4": 1500,
+  "5": 2000,
+  "6": 3000,
+  "7": 5000
+};
 
-function normaliseSearch(search) {
-  return search.replace(/^\?/, '').replace(/,\s*(?=[a-z]+\d*=)/gi, '&');
+function sanitizeImageName(name) {
+  return (name || "").replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
-function cleanText(value) {
-  if (!value) {
-    return '';
+function getScenes() {
+  const packed = params.get("s");
+  if (!packed) {
+    return [{
+      msg: "I love you lots, but",
+      mt: "1",
+      mc: "0",
+      img: "heart",
+      it: "1",
+      ic: "0",
+      dly: "6",
+      dur: "5"
+    }];
   }
 
-  let text = value.trim();
-
-  if (
-    (text.startsWith("'") && text.endsWith("'")) ||
-    (text.startsWith('"') && text.endsWith('"'))
-  ) {
-    text = text.slice(1, -1).trim();
-  }
-
-  return text;
+  return packed.split("~").map(entry => {
+    const p = entry.split(",");
+    return {
+      msg: decodeURIComponent(p[0] || ""),
+      mt: p[1] || "0",
+      mc: p[2] || "0",
+      img: sanitizeImageName(p[3] || ""),
+      it: p[4] || "0",
+      ic: p[5] || "0",
+      dly: p[6] || "0",
+      dur: p[7] || "5"
+    };
+  });
 }
 
-function buildScenes() {
-  const params = new URLSearchParams(normaliseSearch(window.location.search));
-  const indexSet = new Set();
+function msgClass(t){
+  return ["","msg-fade","msg-zoom","msg-slide","msg-spin"][t] || "msg-fade";
+}
+function imgClass(t){
+  return ["","img-zoom-in","img-zoom-out","img-spin-cw","img-spin-ccw","img-fade"][t] || "img-zoom-in";
+}
 
-  for (const key of params.keys()) {
-    const match = key.match(/^(msg|msgt|img|imgt)(\d+)$/i);
-    if (match) {
-      indexSet.add(Number.parseInt(match[2], 10));
+const messageScene = document.getElementById("message-scene");
+const imageScene = document.getElementById("image-scene");
+const pageMessage = document.getElementById("page-message");
+const heroImage = document.getElementById("hero-image");
+
+function reset(){
+  messageScene.style.display="none";
+  imageScene.style.display="none";
+  pageMessage.className="title";
+  heroImage.className="hero-image";
+}
+
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function play(){
+  const scenes = getScenes();
+
+  for(const s of scenes){
+    reset();
+
+    await wait(TIMES[s.dly] ?? 0);
+
+    if(s.msg){
+      messageScene.style.display="flex";
+      pageMessage.textContent = s.msg;
+      pageMessage.classList.add(msgClass(parseInt(s.mt)));
+      if(COLORS[s.mc]) pageMessage.style.color = COLORS[s.mc];
     }
-  }
 
-  const sortedIndexes = [...indexSet].sort((a, b) => a - b);
-
-  if (!sortedIndexes.length) {
-    return [
-      {
-        message: cleanText(params.get('message')) || DEFAULT_MESSAGE,
-        msgTransition: DEFAULT_MESSAGE_TRANSITION,
-        image: DEFAULT_IMAGE,
-        imgTransition: DEFAULT_IMAGE_TRANSITION
+    if(s.img){
+      imageScene.style.display="flex";
+      heroImage.src = "img/" + s.img + ".svg";
+      heroImage.classList.add(imgClass(parseInt(s.it)));
+      if(COLORS[s.ic]){
+        heroImage.style.filter = "drop-shadow(0 0 0 " + COLORS[s.ic] + ")";
       }
-    ];
-  }
-
-  const scenes = [];
-
-  for (const index of sortedIndexes) {
-    const message = cleanText(params.get(`msg${index}`));
-    const msgTransition = params.get(`msgt${index}`) || DEFAULT_MESSAGE_TRANSITION;
-    const image = cleanText(params.get(`img${index}`));
-    const imgTransition = params.get(`imgt${index}`) || DEFAULT_IMAGE_TRANSITION;
-
-    if (!message && !image) {
-      continue;
     }
 
-    scenes.push({
-      message,
-      msgTransition: MESSAGE_TRANSITIONS.has(msgTransition) ? msgTransition : DEFAULT_MESSAGE_TRANSITION,
-      image: ALLOWED_IMAGES[image] ? image : '',
-      imgTransition: IMAGE_TRANSITIONS.has(imgTransition) ? imgTransition : DEFAULT_IMAGE_TRANSITION
-    });
-  }
-
-  return scenes.length
-    ? scenes
-    : [{
-        message: DEFAULT_MESSAGE,
-        msgTransition: DEFAULT_MESSAGE_TRANSITION,
-        image: DEFAULT_IMAGE,
-        imgTransition: DEFAULT_IMAGE_TRANSITION
-      }];
-}
-
-function resetScene(sceneElement, targetElement) {
-  sceneElement.classList.remove('is-active');
-  sceneElement.style.opacity = '';
-  sceneElement.style.visibility = '';
-
-  targetElement.className = targetElement.className
-    .replace(/\btransition-(msg|img)-\d+\b/g, '')
-    .replace(/\bmotion-target\b/g, '')
-    .trim();
-
-  targetElement.style.opacity = '';
-  targetElement.style.transform = '';
-  targetElement.style.animation = 'none';
-  void targetElement.offsetWidth;
-  targetElement.style.animation = '';
-}
-
-function playScene(scene, messageScene, messageElement, imageScene, imageElement, index, total) {
-  const hasMessage = Boolean(scene.message);
-  const hasImage = Boolean(scene.image && ALLOWED_IMAGES[scene.image]);
-
-  resetScene(messageScene, messageElement);
-  resetScene(imageScene, imageElement);
-
-  if (hasMessage) {
-    messageElement.textContent = scene.message;
-    messageElement.classList.add('motion-target', `transition-msg-${scene.msgTransition}`);
-    messageScene.classList.add('is-active');
-    document.title = scene.message;
-  }
-
-  if (hasImage) {
-    imageElement.src = ALLOWED_IMAGES[scene.image];
-    imageElement.alt = `${scene.image} SVG artwork`;
-    imageElement.classList.add('motion-target', `transition-img-${scene.imgTransition}`);
-    imageScene.classList.add('is-active');
-  }
-
-  if (!hasMessage && !hasImage) {
-    return;
-  }
-
-  const isLastScene = index === total - 1;
-
-  if (isLastScene) {
-    window.setTimeout(() => {
-      if (hasMessage) {
-        messageScene.classList.add('is-active');
-        messageScene.style.opacity = '1';
-        messageScene.style.visibility = 'visible';
-        messageElement.style.opacity = '1';
-        messageElement.style.transform = 'none';
-        messageElement.style.animation = 'none';
-      }
-
-      if (hasImage) {
-        imageScene.classList.add('is-active');
-        imageScene.style.opacity = '1';
-        imageScene.style.visibility = 'visible';
-        imageElement.style.opacity = '1';
-        imageElement.style.transform = 'none';
-        imageElement.style.animation = 'none';
-      }
-    }, SCENE_DURATION_MS);
+    await wait(TIMES[s.dur] ?? 2000);
   }
 }
 
-window.addEventListener('load', () => {
-  const messageScene = document.getElementById('message-scene');
-  const imageScene = document.getElementById('image-scene');
-  const messageElement = document.getElementById('page-message');
-  const imageElement = document.getElementById('hero-image');
-  const scenes = buildScenes();
-
-  document.documentElement.style.setProperty('--scene-duration', `${SCENE_DURATION_MS}ms`);
-
-  window.setTimeout(() => {
-    scenes.forEach((scene, index) => {
-      window.setTimeout(() => {
-        playScene(scene, messageScene, messageElement, imageScene, imageElement, index, scenes.length);
-      }, index * SCENE_DURATION_MS);
-    });
-  }, INITIAL_DELAY_MS);
-});
+window.addEventListener("load", play);
