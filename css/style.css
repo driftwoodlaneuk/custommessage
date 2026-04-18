@@ -44,6 +44,7 @@ body {
 
 .scene.is-active {
   visibility: visible;
+  opacity: 1;
 }
 
 .title {

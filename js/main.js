@@ -92,14 +92,20 @@ function buildScenes() {
 }
 
 function resetScene(sceneElement, targetElement) {
-  sceneElement.className = sceneElement.className.replace(/\bis-active\b/g, '').trim();
+  sceneElement.classList.remove('is-active');
+  sceneElement.style.opacity = '';
+  sceneElement.style.visibility = '';
+
   targetElement.className = targetElement.className
     .replace(/\btransition-(msg|img)-\d+\b/g, '')
     .replace(/\bmotion-target\b/g, '')
     .trim();
 
-  // Force reflow so the same animation can replay on the next scene.
-  void sceneElement.offsetWidth;
+  targetElement.style.opacity = '';
+  targetElement.style.transform = '';
+  targetElement.style.animation = 'none';
+  void targetElement.offsetWidth;
+  targetElement.style.animation = '';
 }
 
 function playScene(scene, messageScene, messageElement, imageScene, imageElement, index, total) {
@@ -132,17 +138,21 @@ function playScene(scene, messageScene, messageElement, imageScene, imageElement
   if (isLastScene) {
     window.setTimeout(() => {
       if (hasMessage) {
+        messageScene.classList.add('is-active');
         messageScene.style.opacity = '1';
         messageScene.style.visibility = 'visible';
         messageElement.style.opacity = '1';
         messageElement.style.transform = 'none';
+        messageElement.style.animation = 'none';
       }
 
       if (hasImage) {
+        imageScene.classList.add('is-active');
         imageScene.style.opacity = '1';
         imageScene.style.visibility = 'visible';
         imageElement.style.opacity = '1';
         imageElement.style.transform = 'none';
+        imageElement.style.animation = 'none';
       }
     }, SCENE_DURATION_MS);
   }
