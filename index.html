@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I love you lots, but</title>
+  <meta name="description" content="A simple landing page with configurable messages, SVGs, and transitions." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="hero">
+    <div class="scene scene--message" id="message-scene" aria-live="polite">
+      <h1 class="title" id="page-message">I love you lots, but</h1>
+    </div>
+
+    <div class="scene scene--image" id="image-scene" aria-hidden="true">
+      <img
+        src="img/middle-finger-svgrepo-com.svg"
+        alt="SVG artwork"
+        class="hero-image"
+        id="hero-image"
+      />
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+:root {
+  --bg-start: #fff7fb;
+  --bg-end: #ffe9f2;
+  --text: #1f1720;
+  --scene-duration: 2200ms;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(180deg, var(--bg-start), var(--bg-end));
+  color: var(--text);
+}
+
+body {
+  display: grid;
+  place-items: center;
+}
+
+.hero {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  visibility: hidden;
+  padding: 5vmin;
+}
+
+.scene.is-active {
+  visibility: visible;
+}
+
+.title {
+  margin: 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.45);
+  max-width: min(90vw, 16ch);
+  word-break: break-word;
+}
+
+.hero-image {
+  width: min(90vw, 90vh);
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  transform-origin: center center;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
+}
+
+.motion-target {
+  opacity: 0;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.scene.is-active .motion-target {
+  animation-duration: var(--scene-duration);
+  animation-timing-function: ease;
+  animation-fill-mode: forwards;
+}
+
+.scene.is-active .transition-msg-1 {
+  animation-name: msgFadeIn;
+}
+
+.scene.is-active .transition-msg-2 {
+  animation-name: msgZoomIn;
+}
+
+.scene.is-active .transition-msg-3 {
+  animation-name: msgSlideUp;
+}
+
+.scene.is-active .transition-msg-4 {
+  animation-name: msgSpinIn;
+}
+
+.scene.is-active .transition-img-1 {
+  animation-name: imgZoomIn;
+}
+
+.scene.is-active .transition-img-2 {
+  animation-name: imgZoomOut;
+}
+
+.scene.is-active .transition-img-3 {
+  animation-name: imgSpinClockwise;
+}
+
+.scene.is-active .transition-img-4 {
+  animation-name: imgSpinCounterClockwise;
+}
+
+.scene.is-active .transition-img-5 {
+  animation-name: imgFadeIn;
+}
+
+@keyframes msgFadeIn {
+  0%, 20% { opacity: 0; transform: scale(1); }
+  35%, 75% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes msgZoomIn {
+  0%, 20% { opacity: 0; transform: scale(0.2); }
+  45%, 75% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes msgSlideUp {
+  0%, 20% { opacity: 0; transform: translateY(60px); }
+  40%, 75% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
+@keyframes msgSpinIn {
+  0%, 20% { opacity: 0; transform: scale(0.3) rotate(-180deg); }
+  45%, 75% { opacity: 1; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes imgZoomIn {
+  0%, 20% { opacity: 0; transform: scale(0.01); }
+  45%, 80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes imgZoomOut {
+  0%, 20% { opacity: 0; transform: scale(1.45); }
+  45%, 80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.92); }
+}
+
+@keyframes imgSpinClockwise {
+  0%, 20% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  45%, 80% { opacity: 1; transform: scale(1) rotate(360deg); }
+  100% { opacity: 0; transform: scale(1) rotate(360deg); }
+}
+
+@keyframes imgSpinCounterClockwise {
+  0%, 20% { opacity: 0; transform: scale(0.2) rotate(0deg); }
+  45%, 80% { opacity: 1; transform: scale(1) rotate(-360deg); }
+  100% { opacity: 0; transform: scale(1) rotate(-360deg); }
+}
+
+@keyframes imgFadeIn {
+  0%, 20% { opacity: 0; transform: scale(1); }
+  40%, 80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .motion-target {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .scene.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .scene.is-active .motion-target {
+    opacity: 1;
+    transform: none;
+  }
+}
